@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WatchMatrix - Stream Movies</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #00ff88;
+            --secondary: #0099ff;
+            --dark: #0a0a0a;
+            --matrix: #00ff41;
+            --light: #ffffff;
+            --gray: #8c8c8c;
+            --dark-gray: #1a1a1a;
+            --success: #00ff88;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        }
+
+        /* Matrix background effect */
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 153, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(0, 255, 65, 0.05) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 4%;
+            background: linear-gradient(to bottom, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0) 100%);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            transition: all 0.4s ease;
+            transform: translateY(0);
+            backdrop-filter: blur(10px);
+        }
+
+        header.hidden {
+            transform: translateY(-100%);
+        }
+
+        header.scrolled {
+            background: rgba(10,10,10,0.95);
+            padding: 0.8rem 4%;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: var(--secondary);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.8);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 2rem;
+            position: relative;
+        }
+
+        nav ul li a {
+            color: var(--light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 0;
+            position: relative;
+        }
+
+        nav ul li a:hover {
+            color: var(--primary);
+        }
+
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.6rem 1rem;
+            border-radius: 25px;
+            color: var(--light);
+            width: 220px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-box input:focus {
+            width: 280px;
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 85vh;
+            background: linear-gradient(135deg, 
+                rgba(10,10,10,0.9) 0%, 
+                rgba(10,10,10,0.7) 50%,
+                rgba(10,10,10,0.9) 100%),
+                url('https://images.unsplash.com/photo-1489599809505-fb40ebc14d59?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80') no-repeat center center/cover;
+            display: flex;
+            align-items: center;
+            padding: 0 4%;
+            position: relative;
+            animation: fadeIn 1s ease-in;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-content {
+            max-width: 650px;
+            z-index: 2;
+            animation: slideInLeft 1s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        .hero-content p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            color: #e5e5e5;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            line-height: 1.6;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            color: var(--gray);
+            flex-wrap: wrap;
+        }
+
+        .rating {
+            color: gold;
+            font-weight: 600;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 1rem;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--dark);
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            color: var(--dark);
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+        }
+
+        /* Movie Sections */
+        .section {
+            padding: 3rem 4%;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+            position: relative;
+        }
+
+        .section:nth-child(1) { animation-delay: 0.2s; }
+        .section:nth-child(2) { animation-delay: 0.4s; }
+        .section:nth-child(3) { animation-delay: 0.6s; }
+        .section:nth-child(4) { animation-delay: 0.8s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--light);
+        }
+
+        .view-all {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .view-all:hover {
+            color: var(--light);
+            border-color: var(--primary);
+            transform: translateX(5px);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .movies-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+            scrollbar-width: thin;
+        }
+
+        .movies-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .movies-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+        }
+
+        .movie-card {
+            min-width: 220px;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            animation: fadeIn 0.5s ease;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .movie-card:hover {
+            transform: scale(1.05) translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 255, 136, 0.2);
+            z-index: 10;
+            border-color: var(--primary);
+        }
+
+        .movie-card:hover .play-overlay {
+            opacity: 1;
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .movie-card:hover img {
+            transform: scale(1.1);
+        }
+
+        .play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0,255,136,0.8), rgba(0,153,255,0.8));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .play-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(10,10,10,0.9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: transform 0.3s ease;
+            color: var(--primary);
+        }
+
+        .movie-card:hover .play-icon {
+            transform: scale(1.1);
+        }
+
+        .movie-info {
+            padding: 1.2rem;
+            background: rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .movie-card:hover .movie-info {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .movie-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
+            color: var(--light);
+        }
+
+        .movie-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .download-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--success);
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            color: var(--dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .movie-card:hover .download-btn {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .download-btn:hover {
+            background: #00e676;
+            transform: scale(1.2);
+        }
+
+        /* Video Player Modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10,10,10,0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .video-container {
+            width: 90%;
+            max-width: 1200px;
+            background: rgba(20,20,20,0.95);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            animation: scaleIn 0.3s ease;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .video-player {
+            width: 100%;
+            height: 70vh;
+            background: #000;
+        }
+
+        .drive-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .video-controls {
+            padding: 1.2rem;
+            background: rgba(30,30,30,0.95);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            border-top: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .video-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            flex: 1;
+            color: var(--light);
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .close-video {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: var(--light);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.6rem;
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-video:hover {
+            background: rgba(255,50,50,0.2);
+            transform: rotate(90deg);
+            color: #ff4444;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            padding: 4rem 4% 2rem;
+            margin-top: 3rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 1.2s forwards;
+            border-top: 1px solid rgba(0, 255, 136, 0.1);
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-column h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-column ul li a {
+            color: var(--gray);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .footer-column ul li a:hover {
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-icons a {
+            color: var(--gray);
+            font-size: 1.3rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .social-icons a:hover {
+            color: var(--primary);
+            transform: translateY(-3px);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .copyright span {
+            color: var(--primary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .footer-content {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+            }
+
+            .search-box input {
+                width: 180px;
+            }
+
+            .hero-content h1 {
+                font-size: 2.8rem;
+            }
+
+            .movie-card {
+                min-width: 180px;
+            }
+
+            .video-actions {
+                flex-direction: column;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .hero-content h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero-content p {
+                font-size: 1.1rem;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                display: none;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Background -->
+    <div class="matrix-bg"></div>
+
+    <!-- Header -->
+    <header>
+        <a href="#" class="logo">Watch<span>Matrix</span></a>
+        <nav>
+            <ul>
+                <li><a href="#" class="nav-link" data-section="home">Home</a></li>
+                <li><a href="#" class="nav-link" data-section="movies">Movies</a></li>
+                <li><a href="#" class="nav-link" data-section="tv-shows">TV Shows</a></li>
+                <li><a href="#" class="nav-link" data-section="anime">Anime</a></li>
+                <li><a href="#" class="nav-link" data-section="new">New</a></li>
+                <li><a href="#" class="nav-link" data-section="my-list">My List</a></li>
+            </ul>
+        </nav>
+        <div class="header-right">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search movies...">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="mainContent">
+        <!-- Hero Section -->
+        <section class="hero" id="home-section">
+            <div class="hero-content">
+                <h1>Avatar: The Way of Water</h1>
+                <div class="hero-meta">
+                    <span class="rating">★ 7.5/10</span>
+                    <span>2022</span>
+                    <span>3h 12m</span>
+                    <span>Action • Adventure • Sci-Fi</span>
+                </div>
+                <p>Jake Sully lives with his newfound family formed on the extrasolar moon Pandora. Once a familiar threat returns to finish what was previously started, Jake must work with Neytiri and the army of the Na'vi race to protect their home.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="playMovie('Avatar: The Way of Water', '1Cwc0Xxqa7YbdK8c_6bQ5V87eR0RFZ2O3')">
+                        <i class="fas fa-play"></i> Play Now
+                    </button>
+                    <button class="btn btn-secondary" onclick="showMovieInfo('Avatar: The Way of Water')">
+                        <i class="fas fa-info-circle"></i> More Info
+                    </button>
+                    <button class="btn btn-success" onclick="downloadMovie('Avatar: The Way of Water', '1Cwc0Xxqa7YbdK8c_6bQ5V87eR0RFZ2O3')">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Movie Sections -->
+        <section class="section" id="movies-section">
+            <div class="section-header">
+                <h2 class="section-title">Featured Movies</h2>
+                <a href="#" class="view-all" onclick="showAllMovies('popular')">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="movies-container" id="popular-movies">
+                <!-- Movies will be loaded by JavaScript -->
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Trending Now</h2>
+                <a href="#" class="view-all" onclick="showAllMovies('trending')">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="movies-container" id="trending-movies">
+                <!-- Movies will be loaded by JavaScript -->
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">New Releases</h2>
+                <a href="#" class="view-all" onclick="showAllMovies('new')">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="movies-container" id="new-movies">
+                <!-- Movies will be loaded by JavaScript -->
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title">Top Rated</h2>
+                <a href="#" class="view-all" onclick="showAllMovies('top-rated')">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="movies-container" id="top-rated-movies">
+                <!-- Movies will be loaded by JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Video Player Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-container">
+            <div class="video-player" id="videoPlayer">
+                <!-- Google Drive iframe will be inserted here -->
+            </div>
+            <div class="video-controls">
+                <div class="video-title" id="videoTitle">Movie Title</div>
+                <div class="video-actions">
+                    <button class="btn btn-success" id="videoDownloadBtn">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button class="close-video" onclick="closeVideo()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>WatchMatrix</h3>
+                <ul>
+                    <li><a href="#" onclick="scrollToSection('home')">Home</a></li>
+                    <li><a href="#" onclick="scrollToSection('movies')">Movies</a></li>
+                    <li><a href="#" onclick="showAllMovies('all')">All Content</a></li>
+                    <li><a href="#">TV Shows</a></li>
+                    <li><a href="#">Anime</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                    <li><a href="#">DMCA</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Support</h3>
+                <ul>
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">System Status</a></li>
+                    <li><a href="#">Supported Devices</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Connect</h3>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-discord"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2024 <span>WatchMatrix</span>. All rights reserved. | The future of streaming is here.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Movie data for WatchMatrix
+        const movies = [
+            { 
+                title: "Avatar: The Way of Water", 
+                year: 2022, 
+                rating: 7.5, 
+                image: "https://m.media-amazon.com/images/M/MV5BYjhiNjBlODctY2ZiOC00YjVlLWFlNzAtNTVhNzM1YjI1NzMxXkEyXkFqcGdeQXVyMjQxNTE1MDA@._V1_FMjpg_UX1000_.jpg",
+                driveId: "1Cwc0Xxqa7YbdK8c_6bQ5V87eR0RFZ2O3",
+                genre: "Sci-Fi",
+                duration: "3h 12m",
+                description: "Jake Sully lives with his newfound family formed on the extrasolar moon Pandora. Once a familiar threat returns to finish what was previously started, Jake must work with Neytiri and the army of the Na'vi race to protect their home."
+            },
+            { 
+                title: "The Batman", 
+                year: 2022, 
+                rating: 8.1, 
+                image: "https://m.media-amazon.com/images/M/MV5BMDdmMTBiNTYtMDIzNi00NGVlLWIzMDYtZTk3MTQ3NGQxZGEwXkEyXkFqcGdeQXVyMzMwOTU5MDk@._V1_FMjpg_UX1000_.jpg",
+                driveId: "sample1",
+                genre: "Action",
+                duration: "2h 56m",
+                description: "When the Riddler, a sadistic serial killer, begins murdering key political figures in Gotham, Batman is forced to investigate the city's hidden corruption and question his family's involvement."
+            },
+            { 
+                title: "Top Gun: Maverick", 
+                year: 2022, 
+                rating: 8.4, 
+                image: "https://m.media-amazon.com/images/M/MV5BZWYzOGEwNTgtNWU3NS00ZTQ0LWJkODUtMmVhMjIwMjA1ZmQwXkEyXkFqcGdeQXVyMjkwOTAyMDU@._V1_FMjpg_UX1000_.jpg",
+                driveId: "sample2",
+                genre: "Action",
+                duration: "2h 11m",
+                description: "After thirty years, Maverick is still pushing the envelope as a top naval aviator, but must confront ghosts of his past when he leads TOP GUN's elite graduates on a mission that demands the ultimate sacrifice."
+            },
+            { 
+                title: "Spider-Man: No Way Home", 
+                year: 2021, 
+                rating: 8.2, 
+                image: "https://m.media-amazon.com/images/M/MV5BZWMyYzFjYTYtNTRjYi00OGExLWE2YzgtOGRmYjAxZTU3NzBiXkEyXkFqcGdeQXVyMzQ0MzA0NTM@._V1_FMjpg_UX1000_.jpg",
+                driveId: "sample3",
+                genre: "Action",
+                duration: "2h 28m",
+                description: "With Spider-Man's identity now revealed, Peter asks Doctor Strange for help. When a spell goes wrong, dangerous foes from other worlds start to appear, forcing Peter to discover what it truly means to be Spider-Man."
+            },
+            { 
+                title: "Dune", 
+                year: 2021, 
+                rating: 8.0, 
+                image: "https://m.media-amazon.com/images/M/MV5BN2FjNmEyNWMtYzM0ZS00NjIyLTg5YzYtYThlMGVjNzE1OGViXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_FMjpg_UX1000_.jpg",
+                driveId: "sample4",
+                genre: "Sci-Fi",
+                duration: "2h 35m",
+                description: "Feature adaptation of Frank Herbert's science fiction novel about the son of a noble family entrusted with the protection of the most valuable asset and most vital element in the galaxy."
+            }
+        ];
+
+        // Function to generate movie cards
+        function generateMovieCards(containerId, movieList) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            movieList.forEach(movie => {
+                const movieCard = document.createElement('div');
+                movieCard.className = 'movie-card';
+                
+                movieCard.innerHTML = `
+                    <div class="movie-poster">
+                        <img src="${movie.image}" alt="${movie.title}" 
+                             onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, #1a1a1a, #2d2d2d);color:#8c8c8c;padding:1rem;text-align:center;font-weight:600;\\'>🎬 ${movie.title}</div>'">
+                    </div>
+                    <div class="play-overlay">
+                        <div class="play-icon">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+                    <div class="movie-info">
+                        <button class="download-btn" onclick="event.stopPropagation(); downloadMovie('${movie.title}', '${movie.driveId}')">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <h3 class="movie-title">${movie.title}</h3>
+                        <div class="movie-meta">
+                            <span>${movie.year}</span>
+                            <span class="rating">★ ${movie.rating}</span>
+                        </div>
+                    </div>
+                `;
+                
+                // Add click event to play video
+                movieCard.addEventListener('click', () => {
+                    playMovie(movie.title, movie.driveId);
+                });
+                
+                container.appendChild(movieCard);
+            });
+        }
+
+        // Video player functions
+        function playMovie(title, driveId) {
+            const videoModal = document.getElementById('videoModal');
+            const videoTitle = document.getElementById('videoTitle');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoDownloadBtn = document.getElementById('videoDownloadBtn');
+            
+            videoTitle.textContent = title;
+            
+            // Create Google Drive iframe
+            videoPlayer.innerHTML = `
+                <iframe class="drive-iframe" 
+                        src="https://drive.google.com/file/d/${driveId}/preview" 
+                        allow="autoplay; fullscreen" 
+                        allowfullscreen>
+                </iframe>
+            `;
+            
+            // Set download button
+            videoDownloadBtn.onclick = () => downloadMovie(title, driveId);
+            
+            videoModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeVideo() {
+            const videoModal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            
+            // Clear the iframe
+            videoPlayer.innerHTML = '';
+            videoModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Download function
+        function downloadMovie(title, driveId) {
+            const downloadUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+            window.open(downloadUrl, '_blank');
+            
+            // Show download notification
+            alert(`Downloading: ${title}\n\nThe download should start automatically. If it doesn't, check your browser's download settings.`);
+        }
+
+        // Movie info function
+        function showMovieInfo(title) {
+            const movie = movies.find(m => m.title === title);
+            if (movie) {
+                alert(`${movie.title}\n\nRating: ★ ${movie.rating}/10\nYear: ${movie.year}\nDuration: ${movie.duration}\nGenre: ${movie.genre}\n\n${movie.description}`);
+            }
+        }
+
+        // View All functionality
+        function showAllMovies(type) {
+            alert(`Showing all ${type} movies - This would display all movies in that category in a real implementation.`);
+        }
+
+        // Navigation functionality
+        function scrollToSection(section) {
+            if (section === 'home') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                const sectionElement = document.getElementById(`${section}-section`);
+                if (sectionElement) {
+                    sectionElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generate movie cards for all sections
+            generateMovieCards('popular-movies', movies);
+            generateMovieCards('trending-movies', [...movies].sort(() => 0.5 - Math.random()));
+            generateMovieCards('new-movies', [...movies].sort((a, b) => b.year - a.year));
+            generateMovieCards('top-rated-movies', [...movies].sort((a, b) => b.rating - a.rating));
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                if (searchTerm.length > 0) {
+                    const filteredMovies = movies.filter(movie => 
+                        movie.title.toLowerCase().includes(searchTerm)
+                    );
+                    generateMovieCards('popular-movies', filteredMovies);
+                } else {
+                    generateMovieCards('popular-movies', movies);
+                }
+            });
+
+            // Header scroll effect
+            let lastScrollTop = 0;
+            window.addEventListener('scroll', function() {
+                const header = document.querySelector('header');
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                
+                if (scrollTop > lastScrollTop && scrollTop > 100) {
+                    header.classList.add('hidden');
+                } else {
+                    header.classList.remove('hidden');
+                }
+                
+                if (scrollTop > 100) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+                
+                lastScrollTop = scrollTop;
+            });
+
+            // Close video when clicking outside
+            document.getElementById('videoModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeVideo();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
